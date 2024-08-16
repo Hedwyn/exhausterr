@@ -8,7 +8,8 @@ Integrate errors as part of you control flow and leverage the full potential of 
 **Table of Contents**
 
 - [Installation](#installation)
-- [Motivation](#motivation)
+- [Usage](#usage)
+- [Motivation](#manifesto)
 - [License](#license)
 
 
@@ -24,6 +25,143 @@ Or if using hatch frontend:
 ```
 hatch shell
 ```
+
+# Usage
+Have a look at the `examples` folder. <br>
+If we look at `examples/results.py`:
+```python
+"""
+A naive example on how to use Result and Error
+"""
+
+import random
+from enum import Enum, auto
+from typing import assert_never
+from exhausterr.errors import Error
+from exhausterr.results import Result, Ok, Err
+
+
+class CoinTossResult(Enum):
+    HEADS = auto()
+    TAILS = auto()
+
+
+class LandedOnEdge(Error):
+    pass
+
+
+class DownTheGutter(Error):
+    pass
+
+
+def toss_a_coin() -> Result[CoinTossResult, LandedOnEdge | DownTheGutter]:
+    """
+    Plays heads or tails... with a few twists !
+    """
+    rng = random.random()
+    if rng < 0.1:
+        return Err(DownTheGutter())
+
+    if rng < 0.2:
+        # jeez, we landed on an edge
+        return Err(LandedOnEdge())
+
+    result = CoinTossResult.HEADS if rng < 0.6 else CoinTossResult.TAILS
+    return Ok(result)
+
+
+def play() -> None:
+    """
+    Tosses a coin and informs the player about the result
+    """
+    res = toss_a_coin()
+    match res:
+        case Ok(coin):
+            print(
+                f"Got {coin.name.lower()}, you {'won' if coin == CoinTossResult.HEADS else 'lost'} !"
+            )
+
+        case Err(err):
+            # Something went wrong.. but what
+            match err:
+                case LandedOnEdge():
+                    print("You landed on an edge ! Let's flip the coin again.")
+
+                case DownTheGutter():
+                    print("Ops, you lost a coin, let's get another one !")
+
+                case _ as unreachable:
+                    assert_never(unreachable)
+
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+for _ in range(100):
+    play()
+
+```
+The first thing to pay attention is the return type of `toss_a_coin`, which is `Result[CoinTossResult, LandedOnEdge | DownTheGutter]`. If you are familiar with Rust syntax, this should be fairly transparent already. This reads as this function provides a `CoinTossResult` on success, and an error on failure which can be either `LandedOnEdge` or `DownTheGutter`. The `Result` annotation is simply the union of `Ok` and `Err` under the hood, which you can see in action in the function body itself:
+```python
+def toss_a_coin() -> Result[CoinTossResult, LandedOnEdge | DownTheGutter]:
+    """
+    Plays heads or tails... with a few twists !
+    """
+    rng = random.random()
+    if rng < 0.1:
+        return Err(DownTheGutter())
+
+    if rng < 0.2:
+        # jeez, we landed on an edge
+        return Err(LandedOnEdge())
+
+    result = CoinTossResult.HEADS if rng < 0.6 else CoinTossResult.TAILS
+    return Ok(result)
+```
+In a nutshell: if your function succeeds, return `Ok(your_return_value)`, otherwise return `Err(the_error_that_occured)`.
+
+Then, callers can examine the result thourgh pattern matching:
+```python
+def play() -> None:
+    """
+    Tosses a coin and informs the player about the result
+    """
+    res = toss_a_coin()
+    match res:
+        case Ok(coin):
+            print(
+                f"Got {coin.name.lower()}, you {'won' if coin == CoinTossResult.HEADS else 'lost'} !"
+            )
+
+        case Err(err):
+            # Something went wrong.. but what
+            match err:
+                case LandedOnEdge():
+                    print("You landed on an edge ! Let's flip the coin again.")
+
+                case DownTheGutter():
+                    print("Ops, you lost a coin, let's get another one !")
+
+                case _ as unreachable:
+                    assert_never(unreachable)
+
+        case _ as unreachable:
+            assert_never(unreachable)
+```
+At this point, you might want to run mypy on this example (`mypy examples/results.py --strict`). It should not detect any errors:
+```console
+Success: no issues found in 1 source file
+```
+You might have noticed the `case _ as unreachable: ...`; this is the idomatic way in Python to check that a path is not reachable, or more precisely here, that a match statement is actually exhaustive. <br>
+Try now commenting out the `case DownTheGutter` arm, or the entire `case Err(err)` arm entirely. You should now get errors when type checking:
+```
+results.py:62: error: Argument 1 to "assert_never" has incompatible type "DownTheGutter"; expected "NoReturn"  [arg-type]
+Found 1 error in 1 file (checked 1 source file)
+```
+`mypy` now spots that we are now covering one possible error path - `DownTheGutter`, in that case.
+<br><br>
+This is obviously a silly example, but this should demonstrate the spirit of exhaustive error handling. Typical error flow with exceptions do not allow this type of static verification on code coverage and exhaustiveness.
+
 
 # Manifesto
 
