@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import (
     Optional,
     NoReturn,
-    Iterable,
     Any,
     TypedDict,
     ClassVar,
@@ -66,12 +65,17 @@ class _ErrorMeta(type):
 
     Arguments: Optional[TypedDictDefinition]
 
-    def __new__(mcs, name: str, bases: tuple, namespace: dict[str, Any]) -> _ErrorMeta:
+    def __new__(
+        mcs, name: str, bases: tuple[type, ...], namespace: dict[str, Any]
+    ) -> _ErrorMeta:
         """
         Builds the match arguments for errors
         """
         error_cls = super().__new__(mcs, name, bases, namespace)
-
+        # Note: if the error class defines __match_args__explicitly,
+        # not overriding it.
+        # User might wat to write them manually as this allows linters and type checkers
+        # to verify that the pattern in a match statement is supported
         if "__match_args__" in namespace:
             return error_cls
 
@@ -81,10 +85,7 @@ class _ErrorMeta(type):
         setattr(
             error_cls,
             "__match_args__",
-            (
-                "description",
-                *extra_match_args,
-            ),
+            tuple(extra_match_args),
         )
         return error_cls
 
@@ -111,8 +112,7 @@ class Error(metaclass=_ErrorMeta):
         the exception class that will be used.
     """
 
-    default_description: ClassVar[str] = ""
-    description_header: ClassVar[str] = ""
+    description_fmt: ClassVar[str] = ""
     exception_cls: ClassVar[type[Exception]] = Exception
     Arguments: ClassVar[TypedDictDefinition | None] = None
 
@@ -121,10 +121,8 @@ class Error(metaclass=_ErrorMeta):
 
     def __init__(  # pylint: disable=keyword-arg-before-vararg
         self,
-        description: Optional[str] = None,
-        *args,
-        notes: Iterable[str] = (),
-        **kwargs,
+        *args: object,
+        **kwargs: object,
     ) -> None:
         """
         Error can be built from single description string,
@@ -138,9 +136,8 @@ class Error(metaclass=_ErrorMeta):
             first one will be used as the exception body,
             while the other one will be used as exception annotations.
         """
-        self._description: str = description or self.default_description
-        self._notes: list[str] = list(notes)
-        self._args: dict = {}
+        self._notes: list[str] = []
+        self._args: dict[str, object] = {}
         if self.Arguments:
             self.set_arguments(*args, **kwargs)
         elif args or kwargs:
@@ -184,34 +181,27 @@ class Error(metaclass=_ErrorMeta):
             )
         self.args[name] = value
 
-    def set_arguments(self, *args, **kwargs) -> None:
+    def set_arguments(self, *args: object, **kwargs: object) -> None:
         """
         Set multiple arguments at once.
         Arguments are consumed following the key declaration order
         of the Arguments dict.
         """
-        args = self.args
+        if self.Arguments is None:
+            raise AttributeError(
+                f"{self.__class__.__name__} does not support arguments"
+            )
         for arg_name, value in zip(order_typed_dict_keys(self.Arguments), args):
-            args[arg_name] = value
+            self.args[arg_name] = value
 
         for arg_name, value in kwargs.items():
-            args[arg_name] = value
+            self.args[arg_name] = value
 
-    def add_notes(self, *notes: str):
+    def add_notes(self, *notes: str) -> None:
         """
         Adds a note to give more details on this error object.
         """
         self._notes.extend(notes)
-
-    @property
-    def unformatted_description(self) -> str:
-        """
-        Returns
-        -------
-        str
-            The complete error description
-        """
-        return self.description_header + self._description
 
     @property
     def description(self) -> str:
@@ -221,15 +211,14 @@ class Error(metaclass=_ErrorMeta):
         str
             The complete error description
         """
-        return self.unformatted_description.format(**self._args)
+        return self.description_fmt.format(**self._args)
 
     def throw(self) -> NoReturn:
         """
         Raises an exception from this error.
-        Named thorxw
-        Uses the exception class defined at the class-level.
+        Uses the exception class `exception_cls` defined at the class-level.
         """
-        exc = self.exception_cls(self.description)
+        exc = self.exception_cls(self.description_fmt)
         for note in self._notes:
             exc.add_note(note)
         raise exc

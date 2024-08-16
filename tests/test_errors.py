@@ -68,8 +68,7 @@ class BasicError(Error):
     feature compared to a raw Error
     """
 
-    default_description = "defaulted"
-    description_header = "BasicError:"
+    description_fmt = "A basic error"
     exception_cls = ValueError
 
 
@@ -87,42 +86,29 @@ def test_error_default_description():
     one is properly formatted.
     """
     err = BasicError()
-    assert err.description == "BasicError:defaulted"
-
-
-def test_error_custom_description():
-    """
-    Checks that description for errors that do provide a custom
-    one is properly formatted.
-    """
-    err = BasicError("custom")
-    assert err.description == "BasicError:custom"
+    assert err.description == "A basic error"
 
 
 def test_error_throw():
     """
     Checks that Error.throw() raises the correct exception
     """
-    err = BasicError("custom")
+    err = BasicError()
     with pytest.raises(ValueError):
         err.throw()
     try:
         err.throw()
     except ValueError as e:
-        assert str(e) == "BasicError:custom"
+        assert str(e) == "A basic error"
 
 
-@pytest.mark.parametrize("at_init", (True, False))
 @pytest.mark.parametrize("notes", (["note1", "note2"],))
-def test_error_notes(at_init: bool, notes: list[str]):
+def test_error_notes(notes: list[str]):
     """
     Checks that Error.notes() returns the correct notes
     """
-    if at_init:
-        err = BasicError("custom", notes=notes)
-    else:
-        err = BasicError("custom")
-        err.add_notes(*notes)
+    err = BasicError()
+    err.add_notes(*notes)
     for note in notes:
         assert note in err._notes
 
@@ -133,28 +119,13 @@ def test_error_notes(at_init: bool, notes: list[str]):
             assert note in e.__notes__
 
 
-def test_error_match():
-    """
-    Check that the match statement is captuing the error
-    and its description propely
-    """
-    err = BasicError("custom")
-
-    match err:
-        case BasicError(desc):
-            assert desc == "BasicError:custom"
-        case _:
-            assert False, "Error did not match"
-
-
 class ErrorWithArgs(Error):
     """
     A basic error that does not introduce any additional
     feature compared to a raw Error
     """
 
-    default_description = "defaulted"
-    description_header = "BasicError:"
+    description_fmt = "a: {a}, b: {b}"
     exception_cls = ValueError
 
     # Issue: seems that TypedDict, unlike dicts, are not ordered ?
@@ -167,12 +138,12 @@ class ErrorWithArgs(Error):
         b: float
 
 
-def test_error_with_arguments_match_args():
+def test_error_meta_creates_match_args():
     """
     Checks that the matcha rguments are propely formatted
     by the metaclass when defining custom arguments
     """
-    assert len(ErrorWithArgs.__match_args__) == 3
+    assert ErrorWithArgs.__match_args__ == ("a", "b")
 
 
 def test_error_with_arguments_matching():
@@ -183,10 +154,10 @@ def test_error_with_arguments_matching():
     err = ErrorWithArgs(a=1, b=2.0)
 
     match err:
-        case BasicError(_):
+        case BasicError():
             assert False, "Matched wrongly as BasicError"
 
-        case ErrorWithArgs(_, a, b):
+        case ErrorWithArgs(a, b):
             assert a == 1
             assert b == 2.0
 
@@ -195,10 +166,10 @@ def test_error_with_arguments_matching():
 
     # now matching with keyword args
     match err:
-        case BasicError(_):
+        case BasicError():
             assert False, "Matched wrongly as BasicError"
 
-        case ErrorWithArgs(_, a=a, b=b):
+        case ErrorWithArgs(a=a, b=b):
             assert a == 1
             assert b == 2.0
 
@@ -223,4 +194,4 @@ def test_error_formatting():
     are formatted properly
     """
     err = ErrorWihFormatting(a=1, b=2.0)
-    assert err.description.startswith("1,2.0")
+    assert err.description == ("a: 1, b: 2.0")
