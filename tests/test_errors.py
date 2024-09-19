@@ -6,12 +6,12 @@ Test suite for error module.
 """
 
 from typing import TypedDict, NotRequired
-
+from dataclasses import dataclass
 import pytest
 from exhausterr.errors import Error, order_typed_dict_keys
 
 
-def test_order_typed_dict_keys():
+def test_order_typed_dict_keys() -> None:
     """
     Checks that TypedDict key ordering returns the correct output when
     only required keys are given.
@@ -27,7 +27,7 @@ def test_order_typed_dict_keys():
         assert list(order_typed_dict_keys(_TypedDictTest)) == ["a", "b", "c"]
 
 
-def test_order_typed_dict_keys_mixed():
+def test_order_typed_dict_keys_mixed() -> None:
     """
     Checks that TypedDict key ordering returns the correct output when
     oa mix of required and optional keys is given
@@ -43,7 +43,7 @@ def test_order_typed_dict_keys_mixed():
         assert list(order_typed_dict_keys(_TypedDictTest)) == ["b", "c", "a"]
 
 
-def test_order_typed_dict_keys_inherited():
+def test_order_typed_dict_keys_inherited() -> None:
     """
     Checks that TypedDict key ordering returns the correct output when
     the TypedDict inherits from another one.
@@ -68,19 +68,22 @@ class BasicError(Error):
     feature compared to a raw Error
     """
 
-    description_fmt = "A basic error"
+    description = "A basic error"
     exception_cls = ValueError
 
 
-def test_error_parent_cls():
+def test_error_parent_cls() -> None:
     """
-    Checks that Error can be instanciated properly
+    Checks that Error can be instanciated properly.
+    Check that error without argument can be declared without @dataclass properly.
     """
-    err = Error()
-    assert err.description == ""
+    err = BasicError()
+    assert BasicError.__match_args__ == ()
+    assert str(err) == BasicError.description
+    assert err.args == {}
 
 
-def test_error_default_description():
+def test_error_default_description() -> None:
     """
     Checks that description for errors that do not provide a custom
     one is properly formatted.
@@ -89,7 +92,7 @@ def test_error_default_description():
     assert err.description == "A basic error"
 
 
-def test_error_throw():
+def test_error_throw() -> None:
     """
     Checks that Error.throw() raises the correct exception
     """
@@ -103,7 +106,7 @@ def test_error_throw():
 
 
 @pytest.mark.parametrize("notes", (["note1", "note2"],))
-def test_error_notes(notes: list[str]):
+def test_error_notes(notes: list[str]) -> None:
     """
     Checks that Error.notes() returns the correct notes
     """
@@ -119,26 +122,23 @@ def test_error_notes(notes: list[str]):
             assert note in e.__notes__
 
 
+@dataclass
 class ErrorWithArgs(Error):
     """
     A basic error that does not introduce any additional
     feature compared to a raw Error
     """
 
-    description_fmt = "a: {a}, b: {b}"
+    description = "a: {a}, b: {b}"
     exception_cls = ValueError
 
-    # Issue: seems that TypedDict, unlike dicts, are not ordered ?
-    class Arguments(TypedDict):
-        """
-        Argument definition for this error
-        """
+    # Argument definition for this error
 
-        a: int
-        b: float
+    a: int
+    b: float
 
 
-def test_error_meta_creates_match_args():
+def test_error_meta_creates_match_args() -> None:
     """
     Checks that the matcha rguments are propely formatted
     by the metaclass when defining custom arguments
@@ -146,7 +146,7 @@ def test_error_meta_creates_match_args():
     assert ErrorWithArgs.__match_args__ == ("a", "b")
 
 
-def test_error_with_arguments_matching():
+def test_error_with_arguments_matching() -> None:
     """
     Checks that the match arguments are propely formatted
     by the metaclass when defining custom arguments
@@ -188,10 +188,10 @@ class ErrorWihFormatting(ErrorWithArgs):
     exception_cls = ValueError
 
 
-def test_error_formatting():
+def test_error_formatting() -> None:
     """
     Checks that errors using string expected format arguments
     are formatted properly
     """
     err = ErrorWihFormatting(a=1, b=2.0)
-    assert err.description == ("a: 1, b: 2.0")
+    assert str(err) == ("a: 1, b: 2.0")
