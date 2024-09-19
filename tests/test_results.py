@@ -9,7 +9,7 @@ from typing import assert_never
 
 import pytest
 from exhausterr.results import AbstractResult, Result, Ok, Err
-from .test_errors import BasicError
+from test_errors import BasicError
 
 
 def fails_on_true(should_fail: bool) -> Result[bool, BasicError]:
@@ -18,7 +18,7 @@ def fails_on_true(should_fail: bool) -> Result[bool, BasicError]:
     return Ok(True)
 
 
-def test_basic_result():
+def test_basic_result() -> None:
     """
     Test basic result.
     """
@@ -34,7 +34,7 @@ def test_basic_result():
 
 
 @pytest.mark.parametrize("successful", [True, False])
-def test_result_matching(successful: bool):
+def test_result_matching(successful: bool) -> None:
     """
     Test basic result.
     """
@@ -62,7 +62,7 @@ def test_result_matching(successful: bool):
             assert False, "Unexpected result type"
 
 
-def test_result_unwrap():
+def test_result_unwrap() -> None:
     """
     Checks that unwrap() raises an exception when the result is an error
     and returns the value when it is not.

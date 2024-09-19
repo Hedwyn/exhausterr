@@ -23,6 +23,7 @@ _NOTSET: Final[object] = object()
 R = TypeVar("R")
 E = TypeVar("E", bound=Error)
 
+
 class AbstractResult(Generic[R, E]):
     """
     Base class for result objects Ok and Err.
@@ -39,7 +40,11 @@ class AbstractResult(Generic[R, E]):
 
     __match_args__ = ("value", "error")
 
-    def __init__(self, value: R = _NOTSET, error: Optional[E] = None) -> None:
+    def __init__(
+        self,
+        value: R = _NOTSET,  # type: ignore[assignment]
+        error: Optional[E] = None,
+    ) -> None:
         """
         value: object
             Value returned by the function, if it did not error out.
@@ -69,6 +74,7 @@ class AbstractResult(Generic[R, E]):
         if error is not None:
             error.throw()
         return self.value
+
 
 class Ok(AbstractResult, Generic[R]):
     """
@@ -107,6 +113,7 @@ class Err(AbstractResult, Generic[E]):
         if isinstance(error, type):
             error = error()
         super().__init__(_NOTSET, error)
+
 
 # --- Result type hints --- #
 Result = Union[Ok[R], Err[E]]
