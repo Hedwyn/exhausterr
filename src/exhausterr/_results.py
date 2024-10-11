@@ -165,6 +165,25 @@ class Ok(AbstractResult[R, None], Generic[R]):
         """
         super().__init__(value, None)  # type: ignore[arg-type]
 
+    def __bool__(self) -> Literal[True]:
+        """
+        Returns
+        -------
+        bool
+            False for a Result that contains an error,
+            True otherwise
+        """
+        return True
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Makes the comparison of two `Ok` objects equivalent to
+        compare their wrapped values.
+        """
+        if not isinstance(other, AbstractResult):
+            return NotImplemented
+        return other.error is None and self.value == other.value
+
 
 class Err(AbstractResult[NotsetT, E], Generic[E]):
     """
@@ -186,6 +205,25 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         if isinstance(error, type):
             error = error()
         super().__init__(_NOTSET, error)
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Makes the comparison of two `Err` objects equivalent to
+        compare their wrapped values.
+        """
+        if not isinstance(other, AbstractResult):
+            return NotImplemented
+        return other.error is not None and self.error == other.error
+
+    def __bool__(self) -> Literal[False]:
+        """
+        Returns
+        -------
+        bool
+            False for a Result that contains an error,
+            True otherwise
+        """
+        return False
 
 
 # --- Result type hints --- #
