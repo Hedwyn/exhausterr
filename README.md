@@ -160,7 +160,29 @@ Found 1 error in 1 file (checked 1 source file)
 ```
 `mypy` now spots that we are now covering one possible error path - `DownTheGutter`, in that case.
 <br><br>
-This is obviously a silly example, but this should demonstrate the spirit of exhaustive error handling. Typical error flow with exceptions do not allow this type of static verification on code coverage and exhaustiveness.
+This is obviously a silly example, but this should demonstrate the spirit of exhaustive error handling. Typical error flow with exceptions do not allow this type of static verification on code coverage and exhaustiveness.<br>
+Note that you may also use `if / else` logic and still benefit from type narrowing. Running `if result: ...` gives you always True for `Ok` results and always False for `Err`. See the following example (`examples/results_with_if.py`):
+
+```python
+from exhausterr import Result, Error
+from typing import reveal_type
+
+def check_result(result: Result[int, Error]) -> None:
+    """
+    Demonstrates that type narrowing is properly performed
+    when using `if` statements instead of `match`.
+    Running 'if result: ...' will narrow the result to Ok(...)
+    wihin `if` scope and to Err(...) in the `else` scope.
+    """
+    if result:
+        # revealed type is Ok[int]
+        reveal_type(result)
+    else:
+        # revealed type is Err[Error]
+        reveal_type(result)
+```
+
+
 
 
 # Manifesto
