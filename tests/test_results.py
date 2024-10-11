@@ -8,7 +8,7 @@ Test suite for results objects.
 from typing import assert_never
 
 import pytest
-from exhausterr.results import AbstractResult, Result, Ok, Err
+from exhausterr import AbstractResult, Result, Ok, Err
 from test_errors import BasicError
 
 

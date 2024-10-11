@@ -8,7 +8,8 @@ Test suite for error module.
 from typing import TypedDict, NotRequired
 from dataclasses import dataclass
 import pytest
-from exhausterr.errors import Error, order_typed_dict_keys
+from exhausterr import Error
+from exhausterr.type_utils import order_typed_dict_keys
 
 
 def test_order_typed_dict_keys() -> None:

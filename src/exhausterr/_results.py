@@ -40,7 +40,7 @@ from typing import (
     Literal,
     overload,
 )
-from exhausterr.errors import Error
+from ._errors import Error
 from enum import Enum, auto
 
 V = TypeVar("V")

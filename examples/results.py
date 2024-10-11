@@ -5,8 +5,8 @@ A naive example on how to use Result and Error
 import random
 from enum import Enum, auto
 from typing import assert_never
-from exhausterr.errors import Error
-from exhausterr.results import Result, Ok, Err
+from exhausterr import Error
+from exhausterr import Result, Ok, Err
 
 
 class CoinTossResult(Enum):
