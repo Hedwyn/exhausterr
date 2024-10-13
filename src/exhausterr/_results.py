@@ -39,6 +39,7 @@ from typing import (
     Final,
     Literal,
     overload,
+    NoReturn,
 )
 from ._errors import Error
 from enum import Enum, auto
@@ -48,7 +49,8 @@ V = TypeVar("V")
 
 # -- Type Variables --- #
 R = TypeVar("R")
-E = TypeVar("E", bound=Union[Error, None])
+MaybeE = TypeVar("MaybeE", bound=Union[Error, None])
+E = TypeVar("E", bound=Error)
 
 
 class Sentinel(Enum):
@@ -66,7 +68,7 @@ NotsetT = Literal[Sentinel.NOTSET]
 _NOTSET: Final = Sentinel.NOTSET
 
 
-class AbstractResult(Generic[R, E]):
+class AbstractResult(Generic[R, MaybeE]):
     """
     Base class for result objects Ok and Err.
     Abstract-ness is not enforced, you should however instanciate
@@ -83,18 +85,18 @@ class AbstractResult(Generic[R, E]):
     __match_args__ = ("value", "error")
 
     @overload
-    def __init__(self: AbstractResult[NotsetT, E]) -> None: ...
+    def __init__(self: AbstractResult[NotsetT, MaybeE]) -> None: ...
 
     @overload
     def __init__(self: AbstractResult[R, None], value: R, error: None) -> None: ...
 
     @overload
-    def __init__(self: AbstractResult[R, E], value: R, error: E) -> None: ...
+    def __init__(self: AbstractResult[R, MaybeE], value: R, error: MaybeE) -> None: ...
 
     def __init__(
         self,
         value: R | NotsetT = _NOTSET,
-        error: Optional[E] = None,
+        error: Optional[MaybeE] = None,
     ) -> None:
         """
         value: object
@@ -184,6 +186,15 @@ class Ok(AbstractResult[R, None], Generic[R]):
             return NotImplemented
         return other.error is None and self.value == other.value
 
+    def unwrap(self) -> R:
+        """
+        Returns
+        -------
+        R
+            Inner result value.
+        """
+        return self.value
+
 
 class Err(AbstractResult[NotsetT, E], Generic[E]):
     """
@@ -224,6 +235,15 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
             True otherwise
         """
         return False
+
+    def unwrap(self) -> NoReturn:
+        """
+        Returns
+        -------
+        R
+            Inner result value.
+        """
+        self.error.throw()
 
 
 # --- Result type hints --- #
