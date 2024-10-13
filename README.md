@@ -1,7 +1,7 @@
-# exhausterr: Exhautive Error Handling in Python
+# exhausterr: Exhautive Error Handling / Railway Programming in Python
 
-A library implementing error as values in Python with exhaustiveness verifiability, type safety and pattern matching. Brings flavors of Zig and Rust error handling to Python towars higher reliability in critical Python programs.<br>
-Integrate errors as part of you control flow and leverage the full potential of type checkers to assert code behavior.
+A library implementing error as values in Python with exhaustiveness verifiability, type safety and pattern matching. Brings flavors of Zig and Rust error handling to Python towards higher reliability in critical Python programs.<br>
+Integrate errors as part of you control flow and leverage the full potential of type checkers to assert code behavior. This utility should help you applying the base principles of railway programming while squeezing their full potential out of type checkers.
 
 -----
 
@@ -15,7 +15,7 @@ Integrate errors as part of you control flow and leverage the full potential of 
 
 
 # Installation
-Requires Python>=3.11. Based on hatch as the build system.
+Requires Python>=3.11. Based on hatchling as the build backend.
 
 ```console
 pip install exhausterr
@@ -205,7 +205,7 @@ Thus, some of the main difference between error-as-values and exceptions are the
 Exceptions also have some major drawbacks and are definitely not loved by everyone, leading to some modern languages do not implement them on purpose. In particular:
 * In their primary form, they basically break all formal verifiability of programs in typed languages, due to the fact they are out of the type system. Checked exceptions are an attempt to solve that (notably in Java), but they end upm often being the worst of both worlds instead of the best. 
 * It's extremly difficult to deal with all possible failure modes in an exhaustive manner,
-since the exceptions are inherently hiding the error flow compared to a naïve "return code as error"
+since the exceptions are inherently hiding the error flow compared to a naive "return code as error"
 C-like approach. The fact that exceptions travel implicitly through the calls makes them very difficult if not impossible to integrate them in a verifiable system..
 * They need special mecanisms to handle them in asynchronous contexts. Remember, exceptions by definition do not allow delaying the error handling - while asynchronous code is all about delaying stuff. This introduces further complexity in code coloring, and prevents from dealing with the "good" and "bad" path in a symmetric way in asynchronous contexts. Also, if something like `asyncio` already bundles this type of mecanisms, for concurrent code based on thread this boilerpalte has to be written manually.<br><br>
 

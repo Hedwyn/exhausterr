@@ -206,7 +206,7 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     result: NotsetT
     error: E
 
-    def __init__(self, error: E) -> None:
+    def __init__(self, error: E | type[E]) -> None:
         """
         Parameters
         ----------
