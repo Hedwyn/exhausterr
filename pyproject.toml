@@ -20,8 +20,12 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Rust",
 ]
 dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest"]
 
 [project.urls]
 Documentation = "https://github.com/Hedwyn/exhausterr#readme"
@@ -30,7 +34,6 @@ Source = "https://github.com/Hedwyn/exhausterr"
 
 [tool.hatch.version]
 source = "vcs"
-path = "src/exhausterr/__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -40,7 +43,7 @@ dependencies = [
 test = "pytest {args:tests}"
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.11", "3.12"]
+python = ["3.11", "3.12", "3.13"]
 
 [tool.hatch.envs.types]
 dependencies = [
