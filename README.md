@@ -27,6 +27,8 @@ hatch shell
 ```
 
 # Usage
+
+## A simple example
 Have a look at the `examples` folder. <br>
 If we look at `examples/results.py`:
 ```python
@@ -182,7 +184,36 @@ def check_result(result: Result[int, Error]) -> None:
         reveal_type(result)
 ```
 
+## Standard patterns
+There are about three idiomatic patterns you can use with `Result`: `match` statement, `if` / `else` and `unwrap()`. We already covered the pattern matching style above, which as a reminder is as follows:
+```python
+match my_result:
+    case Ok(some_value):
+        # ... do something with the value
+    
+    case Err(an_error):
+        # do something with the error
+```
 
+Sometimes `match` statements might feel like an overkill. If you do not need the pattern matching (that is, if you only want to know if it's an error or a success and you do not need to match the *inner* value), `if` / `else` is a perfectly acceptable and supports construct (snippet below is taken from `examples/results_with_if.py`):
+
+```python
+def check_result(result: Result[int, Error]) -> None:
+    if result:
+        # revealed type is Ok[int]
+        reveal_type(result)
+    else:
+        # revealed type is Err[Error]
+        reveal_type(result)
+```
+Type narrowing will be performed correctly by your type checker: within the `if` scope, the type of your `Result` will be narrowed to `Ok`, while in the scope of `else` it will be narrowed to `Err`. Thus, you gets the same verifiability benefits as the `match` statement - without the actual pattern matching. This is quite useful for Results that carry a `None` value, or for logic that only considers one of the two cases.<br>
+The last construct is `unwrap()`, which in the Rust world means "give the the result or panic". Calling `unwrap()` will give you the inner value for an `Ok` result, and will `throw` (*raise*) the error for `Err` (Note: all errors have a class-defined exception class to use when they're raised). Unlike Rust that panics in case of errors, you program can still recover by catching the exception, but the error will now be hidden from your control flow type-wise. Thus, that's a pattern that you should use with caution; it is however quite useful in the following cases:
+* script-like code, that does not require to be polished
+* Internal control flows for which you know that the error case has been checked previously due to the execution order.
+* On places places where you know nothing can handle the error locally anyway and you would rather use standard exception-based propagation (i.e. to convert errors "back" to exception-style).
+
+## Derived patterns
+A useful pattern for defaulting is `my_variable = some_result or default_value` - this reads as "give me the result value if `Ok`  or use the if `Err`". This is directly derived from the implementation of `__bool__` in Results, which was also used in the `if` / `else` examples above. `Ok` will always evaluate to `True` in boolean operations, and `Err` to `False`.
 
 
 # Manifesto
