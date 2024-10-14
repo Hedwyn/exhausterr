@@ -195,6 +195,15 @@ class Ok(AbstractResult[R, None], Generic[R]):
         """
         return self.value
 
+    @property
+    def inner(self) -> R:
+        """
+        A method shared with `Err`. Returns the inner value, useful
+        to iterate over multiple Results when one just wants the wrapped error or value
+        regardless of whether it is an `Ok` or an `Err`.
+        """
+        return self.value
+
 
 class Err(AbstractResult[NotsetT, E], Generic[E]):
     """
@@ -244,6 +253,15 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
             Inner result value.
         """
         self.error.throw()
+
+    @property
+    def inner(self) -> E:
+        """
+        A method shared with `Err`. Returns the inner value, useful
+        to iterate over multiple Results when one just wants the wrapped error or value
+        regardless of whether it is an `Ok` or an `Err`.
+        """
+        return self.error
 
 
 # --- Result type hints --- #
