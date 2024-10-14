@@ -49,8 +49,8 @@ V = TypeVar("V")
 
 # -- Type Variables --- #
 R = TypeVar("R")
-MaybeE = TypeVar("MaybeE", bound=Union[Error, None])
-E = TypeVar("E", bound=Error)
+MaybeE = TypeVar("MaybeE", bound=Union[Error, None], covariant=True)
+E = TypeVar("E", bound=Error, covariant=True)
 
 
 class Sentinel(Enum):
