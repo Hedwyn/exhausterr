@@ -33,6 +33,8 @@ which is equivalent to `Result[None, YourErrorType]`.
 from __future__ import annotations
 from typing import (
     Generic,
+    Iterable,
+    Iterator,
     TypeVar,
     Union,
     Optional,
@@ -40,6 +42,8 @@ from typing import (
     Literal,
     overload,
     NoReturn,
+    Callable,
+    Any,
 )
 from ._errors import Error
 from enum import Enum, auto
@@ -127,12 +131,12 @@ class AbstractResult(Generic[R, MaybeE]):
         error = self.error
 
         if error is not None:
-            # Note: mypy has a known issue with type narrowing
+            # Note for Python < 3.13: mypy has a known issue with type narrowing
             # when using TypeVar to an optional type
             # See following mypy issue:
             # https://github.com/python/mypy/issues/12622
-            # we have to forcefully ignore - mypy is incorrect in this case
-            error.throw()  # type: ignore[union-attr]
+            # For Python3.13+ this should be accepted without ignore comment
+            error.throw()
         value = self.value
         if value == _NOTSET:
             raise RuntimeError(
@@ -195,6 +199,18 @@ class Ok(AbstractResult[R, None], Generic[R]):
         """
         return self.value
 
+    def __str__(self) -> str:
+        """
+        A human-friendly wrapper around the internal value __str__
+        """
+        return f"Ok({self.value})"
+
+    def __repr__(self) -> str:
+        """
+        A human-friendly wrapper around the internal value __repr__
+        """
+        return f"Result[Ok({repr(self.value)})]"
+
     @property
     def inner(self) -> R:
         """
@@ -253,6 +269,18 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
             Inner result value.
         """
         self.error.throw()
+
+    def __str__(self) -> str:
+        """
+        A human-friendly wrapper around the internal value __str__
+        """
+        return f"Err({self.error})"
+
+    def __repr__(self) -> str:
+        """
+        A human-friendly wrapper around the internal value __repr__
+        """
+        return f"Result[Err({repr(self.error)})]"
 
     @property
     def inner(self) -> E:
