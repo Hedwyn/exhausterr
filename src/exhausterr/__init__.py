@@ -4,6 +4,15 @@
 from ._results import Result, Ok, Err, NoneOr, AbstractResult
 from ._errors import Error
 from ._iterators import resultify, result_mapper
+from ._builtin import (
+    safe_int_divide,
+    safe_divide,
+    safe_getattr,
+    safe_getitem,
+    ZeroDivision,
+    BadKey,
+    BadAttribute,
+)
 
 __all__ = [
     "AbstractResult",
@@ -14,4 +23,11 @@ __all__ = [
     "Error",
     "resultify",
     "result_mapper",
+    "safe_int_divide",
+    "safe_divide",
+    "safe_getattr",
+    "safe_getitem",
+    "ZeroDivision",
+    "BadKey",
+    "BadAttribute",
 ]

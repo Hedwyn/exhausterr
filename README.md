@@ -3,6 +3,9 @@
 A library implementing error as values in Python with exhaustiveness verifiability, type safety and pattern matching. Brings flavors of Zig and Rust error handling to Python towards higher reliability in critical Python programs.<br>
 Integrate errors as part of you control flow and leverage the full potential of type checkers to assert code behavior. This utility should help you applying the base principles of railway programming while squeezing their full potential out of type checkers.
 
+# Documentation
+Documentation for exhausterr can be accessed [here](https://hedwyn.github.io/exhausterr).
+
 -----
 
 **Table of Contents**
