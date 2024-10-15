@@ -45,6 +45,13 @@ test = "pytest {args:tests}"
 [[tool.hatch.envs.all.matrix]]
 python = ["3.11", "3.12", "3.13"]
 
+# --- Documentation environements --- #
+[tool.hatch.envs.doc]
+extra-dependencies = ["mkdocs","mkdocs-material"]
+
+[tool.hatch.envs.doc.scripts]
+serve = "mkdocs serve -o"
+
 [tool.hatch.envs.types]
 dependencies = [
   "mypy>=1.0.0",
