@@ -89,3 +89,12 @@ class Error:
         for note in self._notes:
             exc.add_note(note)
         raise exc
+
+@dataclass
+class AnonymousError(Error):
+    """
+    A default error class that wraps a single value of any type.
+    This is meant for convenience syntax sugar to wrap something
+    into an error type automatically.
+    """
+    value: Any

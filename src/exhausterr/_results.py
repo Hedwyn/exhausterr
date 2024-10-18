@@ -33,8 +33,6 @@ which is equivalent to `Result[None, YourErrorType]`.
 from __future__ import annotations
 from typing import (
     Generic,
-    Iterable,
-    Iterator,
     TypeVar,
     Union,
     Optional,
@@ -42,10 +40,8 @@ from typing import (
     Literal,
     overload,
     NoReturn,
-    Callable,
-    Any,
 )
-from ._errors import Error
+from ._errors import Error, AnonymousError
 from enum import Enum, auto
 
 V = TypeVar("V")
@@ -231,15 +227,17 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     result: NotsetT
     error: E
 
-    def __init__(self, error: E | type[E]) -> None:
+    def __init__(self, error: E | type[E] | object) -> None:
         """
         Parameters
         ----------
         value: R
             The returned error
         """
-        if isinstance(error, type):
+        if isinstance(error, type) and issubclass(error, Error):
             error = error()
+        elif not isinstance(error, Error):
+            error = AnonymousError(error)
         super().__init__(_NOTSET, error)
 
     def __eq__(self, other: object) -> bool:
