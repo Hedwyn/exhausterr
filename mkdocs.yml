@@ -10,6 +10,7 @@ markdown_extensions:
   - pymdownx.superfences
 nav:
   - Tutorials: tutorials.md
+  - Differences with `returns` library: differences_returns.md
   - Manifesto: manifesto.md
 
 
