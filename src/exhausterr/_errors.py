@@ -97,4 +97,4 @@ class AnonymousError(Error):
     This is meant for convenience syntax sugar to wrap something
     into an error type automatically.
     """
-    value: Any
+    value: object

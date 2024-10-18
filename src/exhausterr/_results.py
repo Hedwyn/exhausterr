@@ -227,14 +227,16 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     result: NotsetT
     error: E
 
-    def __init__(self, error: E | type[E] | object) -> None:
+    def __init__(self, error: E | type[E] | object = None) -> None:
         """
         Parameters
         ----------
         value: R
             The returned error
         """
-        if isinstance(error, type) and issubclass(error, Error):
+        if error is None:
+            error = Error()
+        elif isinstance(error, type) and issubclass(error, Error):
             error = error()
         elif not isinstance(error, Error):
             error = AnonymousError(error)
