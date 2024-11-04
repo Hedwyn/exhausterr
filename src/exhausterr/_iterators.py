@@ -6,9 +6,19 @@ Some convenience iteration and composition tools around Results.
 """
 
 from __future__ import annotations
-from typing import Iterable, overload, Iterator, TypeVar, Callable, Any
+from typing import (
+    Iterable,
+    cast,
+    assert_never,
+    overload,
+    Iterator,
+    TypeVar,
+    Callable,
+    Any,
+    reveal_type,
+)
 
-from ._results import Ok, Result, Err
+from ._results import Ok, Result, Err, NoneOr
 from ._errors import Error
 
 R = TypeVar("R")
@@ -19,6 +29,7 @@ _B = TypeVar("_B")
 _C = TypeVar("_C")
 _D = TypeVar("_D")
 _E = TypeVar("_E")
+T = TypeVar("T")
 
 
 def resultify(values: Iterable[R]) -> Iterator[Ok[R]]:
@@ -101,3 +112,120 @@ def result_mapper(
             yield Err(_error)
         else:
             yield _result
+
+
+@overload
+def result_reducer(
+    *results: Result[Any, Error],
+    reducer: None,
+    initializer: None,
+) -> NoneOr[Error]: ...
+
+
+@overload
+def result_reducer(
+    *results: Result[Any, Error],
+    reducer: Callable[[T, Any], T],
+    initializer: T,
+) -> Result[T, Error]: ...
+
+
+def result_reducer(
+    *results: Result[Any, Error],
+    reducer: Callable[[T, Any], T] | None = None,
+    initializer: T | None = None,
+) -> Result[Any, Error]:
+    """
+    Similar to functools.reduce, except it operates
+    on Result objects and stops on the first error encountered.
+    If getting any error while chaining, returns the error.
+    Otherwise, reduces the value wrapped by `Ok`.
+    Reduction is defined by:
+    reduce(Seq[n + 1]) = reduce(reduce(Seq[0..n]), Seq[n + 1])
+    with value for the first call being `initializer`.
+
+    Examples
+    --------
+    >>> result_reducer(
+        [Ok(2), Ok(3), Ok(5)],
+        initializer=[],
+        reducer=list.append
+    )
+    Ok([2,3,5])
+
+    >>> result_reducer(
+        [Ok(2), Ok(3), Ok(4)],
+        initializer=0,
+        reducer=sum
+    )
+    Ok(10)
+
+    >>> result_reducer(
+        [Ok(2), Err(3), Ok(4)],
+        initializer=0,
+        reducer=sum
+    )
+    Err(3)
+    """
+    reduced_value = cast(T, initializer)
+    for r in results:
+        match r:
+            case Ok(val):
+                if reducer is not None:
+                    reduced_value = reducer(reduced_value, val)
+            case Err(error):
+                return Err(error)
+
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    return Ok(reduced_value)
+
+
+@overload
+def chain_results(
+    *funcs: Callable[[], Result[Any, Error]],
+    initializer: None,
+    reducer: None,
+) -> NoneOr[Error]: ...
+
+
+@overload
+def chain_results(
+    *funcs: Callable[[], Result[T, Error]],
+    initializer: T,
+    reducer: Callable[[T, Any], T],
+) -> Result[T, Error]: ...
+
+
+def chain_results(
+    *funcs: Callable[[], Result[Any, Error]],
+    initializer: T | None = None,
+    reducer: Callable[[T, Any], T] | None = None,
+) -> Result[Any, Error]:
+    """
+    Similar to `result_reducer`, but takes a functions that returns
+    results instead of results.
+    Calls the function in `funcs` until an error is obtained
+    or all or them are consumed.
+    Output is the same as what `result_reducer` would
+    give on the functions return values.
+
+    See also
+    --------
+    result_reducer
+    """
+    reduced_value = cast(T, initializer)
+    for f in funcs:
+        res = f()
+        match res:
+            case Ok(val):
+                if reducer:
+                    reduced_value = reducer(reduced_value, val)
+            case Err(error):
+                return Err(error)
+
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    return Ok(reduced_value)

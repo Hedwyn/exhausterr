@@ -6,8 +6,8 @@ Test suite for Result mapping primitives
 """
 
 from __future__ import annotations
-
-from exhausterr import resultify, result_mapper, Ok, Error, Err, Result
+from functools import partial
+from exhausterr import resultify, result_mapper, Ok, Error, Err, Result, result_reducer, chain_results
 
 
 class ZeroDivision(Error):
@@ -62,3 +62,77 @@ def test_result_mapper_multiple_function() -> None:
     assert not mapped[1]
     assert type(mapped[0].error) is ZeroDivision
     assert type(mapped[1].error) is ZeroDivision
+
+def test_result_reducer_ok_case() -> None:
+    """
+    Tests the result reducer
+    """
+    assert result_reducer(
+        Ok(2), Ok(3), Ok(5),
+        initializer=0,
+        reducer=lambda a,b: a + b,
+    ) ==  Ok(10)
+
+    l = [1]
+    assert result_reducer(
+        Ok(2), Ok(3), Ok(5),
+        initializer=l,
+        reducer=lambda l, a: l + [a],
+    ) ==  Ok([1, 2,3,5])
+
+def test_result_reducer_err_case_case() -> None:
+    """
+    Tests the result reducer
+    """
+    assert result_reducer(
+        Ok(2), Err(), Ok(5),
+        initializer=0,
+        reducer=lambda a,b: a + b,
+    ) ==  Err()
+
+def test_result_chain_ok_case() -> None:
+    """
+    Tests the result reducer
+    """
+    def get_number(number: int) -> Ok[int]:
+        return Ok(number)
+
+    assert chain_results(
+        partial(get_number, 2),
+        partial(get_number, 3), 
+        partial(get_number, 5), 
+        initializer=0,
+        reducer=lambda a,b: a + b,
+    ) ==  Ok(10)
+
+    l = [1]
+
+    assert chain_results(
+        partial(get_number, 2),
+        partial(get_number, 3), 
+        partial(get_number, 5), 
+        initializer=l,
+        reducer=lambda l, a: l + [a],
+    ) ==  Ok([1,2,3,5])
+
+def test_result_chain_err_case() -> None:
+    """
+    Tests the result reducer
+    """
+    def get_number(number: int):
+        return Ok(number)
+    
+    def do_err():
+        return Err()
+    
+    # we want to make sure that panic is never run
+    def panic():
+        raise RuntimeError()
+
+    assert chain_results(
+        partial(get_number, 2),
+        do_err,
+        panic,
+        initializer=0,
+        reducer=lambda a,b: a + b,
+    ) ==  Err()
