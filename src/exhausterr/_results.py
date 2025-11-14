@@ -38,9 +38,10 @@ from typing import (
     Generic,
     Literal,
     NoReturn,
+    Optional,
     TypeVar,
     Union,
-    overload,
+    cast,
 )
 
 from ._errors import Error
@@ -49,9 +50,9 @@ V = TypeVar("V")
 
 
 # -- Type Variables --- #
-R = TypeVar("R")
+R = TypeVar("R", bound=Optional[object])
 MaybeE = TypeVar("MaybeE", bound=Union[Error, None], covariant=True)
-E = TypeVar("E", covariant=True)
+E = TypeVar("E", bound=Optional[object], covariant=True)
 
 
 class Sentinel(Enum):
@@ -84,30 +85,8 @@ class AbstractResult(Generic[R, E]):
     """
 
     __match_args__ = ("value", "error")
-
-    @overload
-    def __init__(self: AbstractResult[NotsetT, E]) -> None: ...
-
-    @overload
-    def __init__(self: AbstractResult[R, None], value: R, error: None) -> None: ...
-
-    @overload
-    def __init__(self: AbstractResult[R, E], value: R, error: E) -> None: ...
-
-    def __init__(
-        self,
-        value: R | NotsetT = _NOTSET,
-        error: E | NotsetT = _NOTSET,
-    ) -> None:
-        """
-        value: object
-            Value returned by the function, if it did not error out.
-
-        error: Error
-            Error returned by the function
-        """
-        self.value = value
-        self.error = error
+    value: R | NotsetT
+    error: E | None | NotsetT
 
     def __bool__(self) -> bool:
         """
@@ -125,7 +104,6 @@ class AbstractResult(Generic[R, E]):
         is an error, otherwise, returns the result.
         Overriden by the subclasses, Ok() and Err().
         """
-
         raise RuntimeError(
             "This result object is empty and has never been set."
             "You should not call AbstractResult directly"
@@ -139,23 +117,18 @@ class Ok(AbstractResult[R, None], Generic[R]):
     """
 
     __match_args__ = ("value",)
-    error: None
+    error: NotsetT
     value: R
 
-    @overload
-    def __init__(self: Ok[None]) -> None: ...
-
-    @overload
-    def __init__(self: Ok[R], value: R) -> None: ...
-
-    def __init__(self, value: R | None = None) -> None:
+    def __init__(self, value: R = cast(R, None)) -> None:
         """
         Parameters
         ----------
         value: R
             The returned value
         """
-        super().__init__(value, None)  # type: ignore[arg-type]
+        self.value = value
+        self.error = _NOTSET
 
     def __bool__(self) -> Literal[True]:
         """
@@ -174,7 +147,7 @@ class Ok(AbstractResult[R, None], Generic[R]):
         """
         if not isinstance(other, AbstractResult):
             return NotImplemented
-        return other.error is None and self.value == other.value
+        return other.error is _NOTSET and self.value == other.value
 
     def unwrap(self) -> R:
         """
@@ -219,7 +192,7 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
 
     def __init__(
         self,
-        error: E | None = None,
+        error: E = cast(E, None),
         *,
         exception_cls: type[Exception] | None = None,
     ) -> None:
@@ -229,9 +202,9 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         value: R
             The returned error
         """
+        self.error = error
+        self.value = _NOTSET
         self._exception_cls = exception_cls
-
-        super().__init__(_NOTSET, error if error is not None else Error())
 
     def __eq__(self, other: object) -> bool:
         """
@@ -240,7 +213,7 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         """
         if not isinstance(other, AbstractResult):
             return NotImplemented
-        return other.error is not None and self.error == other.error
+        return other.error is not _NOTSET and self.error == other.error
 
     def __bool__(self) -> Literal[False]:
         """
