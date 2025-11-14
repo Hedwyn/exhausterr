@@ -51,11 +51,10 @@ V = TypeVar("V")
 
 # -- Type Variables --- #
 R = TypeVar("R", bound=Optional[object])
-MaybeE = TypeVar("MaybeE", bound=Union[Error, None], covariant=True)
 E = TypeVar("E", bound=Optional[object], covariant=True)
 
 
-class Sentinel(Enum):
+class ExhausterrSentinel(Enum):
     """
     Defining a Sentinel object to represent unset results
     None is not an option because it's a valid value, and
@@ -65,9 +64,9 @@ class Sentinel(Enum):
     NOTSET = auto()
 
 
-NotsetT = Literal[Sentinel.NOTSET]
+NotsetT = Literal[ExhausterrSentinel.NOTSET]
 
-_NOTSET: Final = Sentinel.NOTSET
+_NOTSET: Final = ExhausterrSentinel.NOTSET
 
 
 class AbstractResult(Generic[R, E]):
@@ -86,7 +85,7 @@ class AbstractResult(Generic[R, E]):
 
     __match_args__ = ("value", "error")
     value: R | NotsetT
-    error: E | None | NotsetT
+    error: E | NotsetT
 
     def __bool__(self) -> bool:
         """
@@ -96,7 +95,7 @@ class AbstractResult(Generic[R, E]):
             False for a Result that contains an error,
             True otherwise
         """
-        return self.error is Sentinel.NOTSET
+        return self.error is ExhausterrSentinel.NOTSET
 
     def unwrap(self) -> R:
         """
@@ -110,14 +109,13 @@ class AbstractResult(Generic[R, E]):
         )
 
 
-class Ok(AbstractResult[R, None], Generic[R]):
+class Ok(AbstractResult[R, NotsetT], Generic[R]):
     """
     A successful result.
 
     """
 
     __match_args__ = ("value",)
-    error: NotsetT
     value: R
 
     def __init__(self, value: R = cast(R, None)) -> None:
@@ -129,6 +127,12 @@ class Ok(AbstractResult[R, None], Generic[R]):
         """
         self.value = value
         self.error = _NOTSET
+
+    def __repr__(self) -> str:
+        """
+        Shows only the internal value. Should rebuild the object when fed into eval().
+        """
+        return f"Ok({self.value!r})"
 
     def __bool__(self) -> Literal[True]:
         """
@@ -164,12 +168,6 @@ class Ok(AbstractResult[R, None], Generic[R]):
         """
         return f"Ok({self.value})"
 
-    def __repr__(self) -> str:
-        """
-        A human-friendly wrapper around the internal value __repr__
-        """
-        return f"Result[Ok({repr(self.value)})]"
-
     @property
     def inner(self) -> R:
         """
@@ -187,7 +185,6 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
 
     __match_args__ = ("error",)
 
-    result: NotsetT
     error: E
 
     def __init__(
@@ -205,6 +202,12 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         self.error = error
         self.value = _NOTSET
         self._exception_cls = exception_cls
+
+    def __repr__(self) -> str:
+        """
+        Shows only the internal error. Should rebuild the object when fed into eval().
+        """
+        return f"Err({self.error!r})"
 
     def __eq__(self, other: object) -> bool:
         """
@@ -242,12 +245,6 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         A human-friendly wrapper around the internal value __str__
         """
         return f"Err({self.error})"
-
-    def __repr__(self) -> str:
-        """
-        A human-friendly wrapper around the internal value __repr__
-        """
-        return f"Result[Err({repr(self.error)})]"
 
     @property
     def inner(self) -> E:

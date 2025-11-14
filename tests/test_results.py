@@ -77,3 +77,10 @@ def test_result_unwrap() -> None:
         fails.unwrap()
 
     assert fails_on_true(False).unwrap() is True
+
+
+def test_result_repr_evals() -> None:
+    an_ok_int = Ok(5)
+    a_string_error = Err("some error")
+    assert eval(repr(an_ok_int)) == an_ok_int
+    assert eval(repr(a_string_error)) == a_string_error
