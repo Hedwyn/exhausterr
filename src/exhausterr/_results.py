@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from typing import (
+    ClassVar,
     Final,
     Generic,
     Literal,
@@ -83,9 +84,9 @@ class AbstractResult(Generic[R, E]):
     rather than AbstractResult.
     """
 
-    __match_args__ = ("value", "error")
-    value: R | NotsetT
-    error: E | NotsetT
+    __slots__ = ("value", "error")
+    value: R
+    error: E
 
     def __bool__(self) -> bool:
         """
@@ -115,7 +116,7 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
 
     """
 
-    __match_args__ = ("value",)
+    __match_args__: ClassVar[tuple[str, ...]] = ("value",)
     value: R
 
     def __init__(self, value: R = cast(R, None)) -> None:
@@ -183,8 +184,9 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     An error result.
     """
 
-    __match_args__ = ("error",)
+    __slots__ = AbstractResult.__slots__ + ("_exception_cls",)
 
+    __match_args__: ClassVar[tuple[str, ...]] = ("error",)
     error: E
 
     def __init__(
