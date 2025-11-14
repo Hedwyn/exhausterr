@@ -31,18 +31,19 @@ which is equivalent to `Result[None, YourErrorType]`.
 """
 
 from __future__ import annotations
+
+from enum import Enum, auto
 from typing import (
+    Final,
     Generic,
+    Literal,
+    NoReturn,
     TypeVar,
     Union,
-    Optional,
-    Final,
-    Literal,
     overload,
-    NoReturn,
 )
-from ._errors import Error, AnonymousError
-from enum import Enum, auto
+
+from ._errors import Error
 
 V = TypeVar("V")
 
@@ -50,7 +51,7 @@ V = TypeVar("V")
 # -- Type Variables --- #
 R = TypeVar("R")
 MaybeE = TypeVar("MaybeE", bound=Union[Error, None], covariant=True)
-E = TypeVar("E", bound=Error, covariant=True)
+E = TypeVar("E", covariant=True)
 
 
 class Sentinel(Enum):
@@ -68,7 +69,7 @@ NotsetT = Literal[Sentinel.NOTSET]
 _NOTSET: Final = Sentinel.NOTSET
 
 
-class AbstractResult(Generic[R, MaybeE]):
+class AbstractResult(Generic[R, E]):
     """
     Base class for result objects Ok and Err.
     Abstract-ness is not enforced, you should however instanciate
@@ -85,18 +86,18 @@ class AbstractResult(Generic[R, MaybeE]):
     __match_args__ = ("value", "error")
 
     @overload
-    def __init__(self: AbstractResult[NotsetT, MaybeE]) -> None: ...
+    def __init__(self: AbstractResult[NotsetT, E]) -> None: ...
 
     @overload
     def __init__(self: AbstractResult[R, None], value: R, error: None) -> None: ...
 
     @overload
-    def __init__(self: AbstractResult[R, MaybeE], value: R, error: MaybeE) -> None: ...
+    def __init__(self: AbstractResult[R, E], value: R, error: E) -> None: ...
 
     def __init__(
         self,
         value: R | NotsetT = _NOTSET,
-        error: Optional[MaybeE] = None,
+        error: E | NotsetT = _NOTSET,
     ) -> None:
         """
         value: object
@@ -116,30 +117,19 @@ class AbstractResult(Generic[R, MaybeE]):
             False for a Result that contains an error,
             True otherwise
         """
-        return self.error is None
+        return self.error is Sentinel.NOTSET
 
     def unwrap(self) -> R:
         """
         Raises an exception ('panics') if this result
         is an error, otherwise, returns the result.
+        Overriden by the subclasses, Ok() and Err().
         """
 
-        error = self.error
-
-        if error is not None:
-            # Note for Python < 3.13: mypy has a known issue with type narrowing
-            # when using TypeVar to an optional type
-            # See following mypy issue:
-            # https://github.com/python/mypy/issues/12622
-            # For Python3.13+ this should be accepted without ignore comment
-            error.throw()
-        value = self.value
-        if value == _NOTSET:
-            raise RuntimeError(
-                "This result object is empty and has never been set."
-                "You should not call AbstractResult directly"
-            )
-        return value
+        raise RuntimeError(
+            "This result object is empty and has never been set."
+            "You should not call AbstractResult directly"
+        )
 
 
 class Ok(AbstractResult[R, None], Generic[R]):
@@ -227,20 +217,21 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     result: NotsetT
     error: E
 
-    def __init__(self, error: E | type[E] | object = None) -> None:
+    def __init__(
+        self,
+        error: E | None = None,
+        *,
+        exception_cls: type[Exception] | None = None,
+    ) -> None:
         """
         Parameters
         ----------
         value: R
             The returned error
         """
-        if error is None:
-            error = Error()
-        elif isinstance(error, type) and issubclass(error, Error):
-            error = error()
-        elif not isinstance(error, Error):
-            error = AnonymousError(error)
-        super().__init__(_NOTSET, error)
+        self._exception_cls = exception_cls
+
+        super().__init__(_NOTSET, error if error is not None else Error())
 
     def __eq__(self, other: object) -> bool:
         """
@@ -268,7 +259,10 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         R
             Inner result value.
         """
-        self.error.throw()
+        err = self.error
+        if isinstance(err, Error):
+            err.throw()
+        raise Exception(err)
 
     def __str__(self) -> str:
         """

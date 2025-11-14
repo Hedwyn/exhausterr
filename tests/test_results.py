@@ -14,7 +14,7 @@ from test_errors import BasicError
 
 def fails_on_true(should_fail: bool) -> Result[bool, BasicError]:
     if should_fail:
-        return Err(BasicError)
+        return Err(BasicError())
     return Ok(True)
 
 
