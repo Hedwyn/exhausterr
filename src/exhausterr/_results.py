@@ -109,6 +109,16 @@ class AbstractResult(Generic[R, E]):
             "You should not call AbstractResult directly"
         )
 
+    def unwrap_or_none(self) -> R | None:
+        """
+        Returns None if this Result is an error, otherwise, returns the result.
+        Overriden by the subclasses, Ok() and Err().
+        """
+        raise RuntimeError(
+            "This result object is empty and has never been set."
+            "You should not call AbstractResult directly"
+        )
+
 
 class Ok(AbstractResult[R, NotsetT], Generic[R]):
     """
@@ -155,6 +165,15 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
         return other.error is _NOTSET and self.value == other.value
 
     def unwrap(self) -> R:
+        """
+        Returns
+        -------
+        R
+            Inner result value.
+        """
+        return self.value
+
+    def unwrap_or_none(self) -> R:
         """
         Returns
         -------
@@ -234,13 +253,22 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         """
         Returns
         -------
-        R
-            Inner result value.
+        NoReturns
+           Always raises.
         """
         err = self.error
         if isinstance(err, Error):
             err.throw()
         raise Exception(err)
+
+    def unwrap_or_none(self) -> None:
+        """
+        Returns
+        -------
+        None
+            Always None
+        """
+        return None
 
     def __str__(self) -> str:
         """
