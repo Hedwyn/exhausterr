@@ -10,9 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 keywords = []
-authors = [
-  { name = "Hedwyn", email = "bpestourie@gmail.com" },
-]
+authors = [{ name = "Hedwyn", email = "bpestourie@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -36,9 +34,7 @@ Source = "https://github.com/Hedwyn/exhausterr"
 source = "vcs"
 
 [tool.hatch.envs.default]
-dependencies = [
-  "pytest",
-]
+dependencies = ["pytest"]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
 
@@ -47,14 +43,12 @@ python = ["3.11", "3.12", "3.13"]
 
 # --- Documentation environements --- #
 [tool.hatch.envs.doc]
-extra-dependencies = ["mkdocs","mkdocs-material"]
+extra-dependencies = ["mkdocs", "mkdocs-material"]
 
 [tool.hatch.envs.doc.scripts]
 serve = "mkdocs serve -o"
 
 [tool.hatch.envs.types]
-dependencies = [
-  "mypy>=1.0.0",
-]
+dependencies = ["mypy>=1.0.0"]
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/exhausterr tests}"

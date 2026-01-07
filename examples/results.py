@@ -4,9 +4,9 @@ A naive example on how to use Result and Error
 
 import random
 from enum import Enum, auto
-from typing import assert_never
-from exhausterr import Error
-from exhausterr import Result, Ok, Err
+from typing import assert_never, reveal_type
+
+from exhausterr import Err, Error, Ok, Result
 
 
 class CoinTossResult(Enum):
@@ -44,12 +44,14 @@ def play() -> None:
     """
     res = toss_a_coin()
     match res:
-        case Ok(coin):
+        case Ok(value=coin):
+            reveal_type(coin)
             print(
                 f"Got {coin.name.lower()}, you {'won' if coin == CoinTossResult.HEADS else 'lost'} !"
             )
 
-        case Err(err):
+        case Err(error=err):
+            reveal_type(err)
             # Something went wrong.. but what
             match err:
                 case LandedOnEdge():
