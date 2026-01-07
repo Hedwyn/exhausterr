@@ -43,6 +43,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    Self,
 )
 
 from ._errors import Error
@@ -119,6 +120,23 @@ class AbstractResult(Generic[R, E]):
             "You should not call AbstractResult directly"
         )
 
+    def unwrap_or_self(self) -> R | Self:
+        """
+        Returns the inner value if this Result is OK,
+        otherwise returns itself.
+        Intended to be use to forward ('reraise') errors easily, e.g,
+        assuming func() returns a Result, and we just want to re-return
+        the error if it errors out:
+        >>> if not (val := func().unwrap_or_self()):
+        >>>      return val
+        Mind that the wrapped result value should always be truthy for this pattern to work !
+        Overriden by the subclasses, Ok() and Err().
+        """
+        raise RuntimeError(
+            "This result object is empty and has never been set."
+            "You should not call AbstractResult directly"
+        )
+
 
 class Ok(AbstractResult[R, NotsetT], Generic[R]):
     """
@@ -179,6 +197,15 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
         -------
         R
             Inner result value.
+        """
+        return self.value
+
+    def unwrap_or_self(self) -> R:
+        """
+        Returns
+        -------
+        R
+           Inner result value.
         """
         return self.value
 
@@ -269,6 +296,15 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
             Always None
         """
         return None
+
+    def unwrap_or_self(self) -> Self:
+        """
+        Returns
+        -------
+        Self
+           Itself.
+        """
+        return self
 
     def __str__(self) -> str:
         """
