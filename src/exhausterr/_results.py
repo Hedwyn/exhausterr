@@ -52,7 +52,7 @@ V = TypeVar("V")
 
 
 # -- Type Variables --- #
-R = TypeVar("R", bound=Optional[object])
+R = TypeVar("R", bound=Optional[object], covariant=True)
 E = TypeVar("E", bound=Optional[object], covariant=True)
 
 
