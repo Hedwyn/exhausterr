@@ -44,6 +44,7 @@ from typing import (
     Union,
     cast,
     Self,
+    TypeGuard,
 )
 
 from ._errors import Error
@@ -136,6 +137,19 @@ class AbstractResult(Generic[R, E]):
             "This result object is empty and has never been set."
             "You should not call AbstractResult directly"
         )
+
+
+def is_error(result: Result[R, E]) -> TypeGuard[Err[E]]:
+    """
+    Returns whether the passed result is an error.
+    Works as a type guard for errors, entering the typeguard scope
+    will narrow the result type to an error.
+    Can be used to forward results from inner functions calls:
+    >>> if is_error(result):
+    >>>     reveal_type(result) # -> result is narrowed to Err[E]
+    >>>     return result
+    """
+    return not result
 
 
 class Ok(AbstractResult[R, NotsetT], Generic[R]):

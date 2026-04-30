@@ -1,18 +1,18 @@
 # SPDX-FileCopyrightText: 2024-present Hedwyn <bpestourie@gmail.com>
 #
 # SPDX-License-Identifier: MIT
-from ._results import Result, Ok, Err, NoneOr, AbstractResult
-from ._errors import Error
-from ._iterators import resultify, result_mapper, result_reducer, chain_results
 from ._builtin import (
-    safe_int_divide,
+    BadAttribute,
+    BadKey,
+    ZeroDivision,
     safe_divide,
     safe_getattr,
     safe_getitem,
-    ZeroDivision,
-    BadKey,
-    BadAttribute,
+    safe_int_divide,
 )
+from ._errors import Error
+from ._iterators import chain_results, result_mapper, result_reducer, resultify
+from ._results import AbstractResult, Err, NoneOr, Ok, Result, is_error
 
 __all__ = [
     "AbstractResult",
@@ -26,6 +26,7 @@ __all__ = [
     "result_reducer",
     "chain_results",
     "safe_int_divide",
+    "is_error",
     "safe_divide",
     "safe_getattr",
     "safe_getitem",

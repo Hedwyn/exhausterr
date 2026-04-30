@@ -4,6 +4,7 @@ A library implementing error as values in Python with exhaustiveness verifiabili
 Integrate errors as part of you control flow and leverage the full potential of type checkers to assert code behavior. This utility should help you applying the base principles of railway programming while squeezing their full potential out of type checkers.
 
 # Documentation
+
 Documentation for exhausterr can be accessed [here](https://hedwyn.github.io/exhausterr).
 
 -----
@@ -15,9 +16,8 @@ Documentation for exhausterr can be accessed [here](https://hedwyn.github.io/exh
 - [Motivation](#manifesto)
 - [License](#license)
 
-
-
 # Installation
+
 Requires Python>=3.11. Based on hatchling as the build backend.
 
 ```console
@@ -25,6 +25,7 @@ pip install exhausterr
 ```
 
 Or if using hatch frontend:
+
 ```
 hatch shell
 ```
@@ -32,8 +33,10 @@ hatch shell
 # Usage
 
 ## A simple example
+
 Have a look at the `examples` folder. <br>
 If we look at `examples/results.py`:
+
 ```python
 """
 A naive example on how to use Result and Error
@@ -106,7 +109,9 @@ for _ in range(100):
     play()
 
 ```
+
 The first thing to pay attention is the return type of `toss_a_coin`, which is `Result[CoinTossResult, LandedOnEdge | DownTheGutter]`. If you are familiar with Rust syntax, this should be fairly transparent already. This reads as this function provides a `CoinTossResult` on success, and an error on failure which can be either `LandedOnEdge` or `DownTheGutter`. The `Result` annotation is simply the union of `Ok` and `Err` under the hood, which you can see in action in the function body itself:
+
 ```python
 def toss_a_coin() -> Result[CoinTossResult, LandedOnEdge | DownTheGutter]:
     """
@@ -123,9 +128,11 @@ def toss_a_coin() -> Result[CoinTossResult, LandedOnEdge | DownTheGutter]:
     result = CoinTossResult.HEADS if rng < 0.6 else CoinTossResult.TAILS
     return Ok(result)
 ```
+
 In a nutshell: if your function succeeds, return `Ok(your_return_value)`, otherwise return `Err(the_error_that_occured)`.
 
 Then, callers can examine the result thourgh pattern matching:
+
 ```python
 def play() -> None:
     """
@@ -153,16 +160,21 @@ def play() -> None:
         case _ as unreachable:
             assert_never(unreachable)
 ```
+
 At this point, you might want to run mypy on this example (`mypy examples/results.py --strict`). It should not detect any errors:
+
 ```console
 Success: no issues found in 1 source file
 ```
+
 You might have noticed the `case _ as unreachable: ...`; this is the idomatic way in Python to check that a path is not reachable, or more precisely here, that a match statement is actually exhaustive. <br>
 Try now commenting out the `case DownTheGutter` arm, or the entire `case Err(err)` arm entirely. You should now get errors when type checking:
+
 ```
 results.py:62: error: Argument 1 to "assert_never" has incompatible type "DownTheGutter"; expected "NoReturn"  [arg-type]
 Found 1 error in 1 file (checked 1 source file)
 ```
+
 `mypy` now spots that we are now covering one possible error path - `DownTheGutter`, in that case.
 <br><br>
 This is obviously a silly example, but this should demonstrate the spirit of exhaustive error handling. Typical error flow with exceptions do not allow this type of static verification on code coverage and exhaustiveness.<br>
@@ -188,7 +200,9 @@ def check_result(result: Result[int, Error]) -> None:
 ```
 
 ## Standard patterns
+
 There are about three idiomatic patterns you can use with `Result`: `match` statement, `if` / `else` and `unwrap()`. We already covered the pattern matching style above, which as a reminder is as follows:
+
 ```python
 match my_result:
     case Ok(some_value):
@@ -209,39 +223,42 @@ def check_result(result: Result[int, Error]) -> None:
         # revealed type is Err[Error]
         reveal_type(result)
 ```
+
 Type narrowing will be performed correctly by your type checker: within the `if` scope, the type of your `Result` will be narrowed to `Ok`, while in the scope of `else` it will be narrowed to `Err`. Thus, you gets the same verifiability benefits as the `match` statement - without the actual pattern matching. This is quite useful for Results that carry a `None` value, or for logic that only considers one of the two cases.<br>
 The last construct is `unwrap()`, which in the Rust world means "give the the result or panic". Calling `unwrap()` will give you the inner value for an `Ok` result, and will `throw` (*raise*) the error for `Err` (Note: all errors have a class-defined exception class to use when they're raised). Unlike Rust that panics in case of errors, you program can still recover by catching the exception, but the error will now be hidden from your control flow type-wise. Thus, that's a pattern that you should use with caution; it is however quite useful in the following cases:
-* script-like code, that does not require to be polished
-* Internal control flows for which you know that the error case has been checked previously due to the execution order.
-* On places places where you know nothing can handle the error locally anyway and you would rather use standard exception-based propagation (i.e. to convert errors "back" to exception-style).
+- script-like code, that does not require to be polished
+- Internal control flows for which you know that the error case has been checked previously due to the execution order.
+- On places places where you know nothing can handle the error locally anyway and you would rather use standard exception-based propagation (i.e. to convert errors "back" to exception-style).
 
 ## Derived patterns
-A useful pattern for defaulting is `my_variable = some_result or default_value` - this reads as "give me the result value if `Ok`  or use the if `Err`". This is directly derived from the implementation of `__bool__` in Results, which was also used in the `if` / `else` examples above. `Ok` will always evaluate to `True` in boolean operations, and `Err` to `False`.
 
+A useful pattern for defaulting is `my_variable = some_result or default_value` - this reads as "give me the result value if `Ok`  or use the if `Err`". This is directly derived from the implementation of `__bool__` in Results, which was also used in the `if` / `else` examples above. `Ok` will always evaluate to `True` in boolean operations, and `Err` to `False`.
 
 # Manifesto
 
 ## What does "error as values" mean ?
+
 You might not know it yet, but when programming sometimes shit goes wrong. When writing a function that can fail, one needs a way to inform the function caller that something went wrong. **"Error as values"** simply means that the return value of the function itself will tell whether the call was successful or failed, and was the historical and for a long time only way to deal with errors. In C typically, function that can error typically return an integer encoding either success or an error type, while the actual payload procuced by the function woud typically by passed by giving a pointer to memory location where it should be written.
 Exceptions are the main alternative (or complement...as we will discuss later) to error-as-values, and have been popularized by languages like Java. Languages with exception support provide them as a way to interrupt a function early on and navigate backward in the call stack -until finding a caller that knows how to deal with it. From the programmer's perspective, they are usually kept out of the type system, and in a way isolated from the main control flow, which then is kept centered on the *happy path*.
 
 ## Why using exceptions ?
+
 Philosophy of exceptions is to simplify the main control flow ('happy path') by isolating (some would dare to say hiding) errors from it. The idea behind is that you only care about errors if you know how to deal wih them, otherwise it's fine to not even know about them. <br>
 To achieve that, one key property of exceptions is that it gets implicitly forwarded through
 the call stack until it hits something that can deal with it (typically through some `try...catch` syntax, where `catch` allows you to specify what type of error(s) you are able to deal with). <br>
 Thus, some of the main difference between error-as-values and exceptions are the following:
-* Exceptions will not allow you to delay the error handling. Either you catch and deal with the problem, or your function will be interrupted and the exceptyion will go one step up in the call stack. With error as values, you can go farther in the function body and deal with the error later.
-* Exceptions travel *implicitly* through the call stack, while error-as-values have to be explictly forwarded.
-* Exceptions are *usually* not integrated in the type system. (Java checked exceptions is one exception - sorry for the pun). Modern languages using aerror-as-values are typically able to integrate errors in the type system, allowing the errors that a given function could produce to be exposed clearly in the type system. 
+- Exceptions will not allow you to delay the error handling. Either you catch and deal with the problem, or your function will be interrupted and the exceptyion will go one step up in the call stack. With error as values, you can go farther in the function body and deal with the error later.
+- Exceptions travel *implicitly* through the call stack, while error-as-values have to be explictly forwarded.
+- Exceptions are *usually* not integrated in the type system. (Java checked exceptions is one exception - sorry for the pun). Modern languages using aerror-as-values are typically able to integrate errors in the type system, allowing the errors that a given function could produce to be exposed clearly in the type system.
 
 ## The issue with exceptions
 
 Exceptions also have some major drawbacks and are definitely not loved by everyone, leading to some modern languages do not implement them on purpose. In particular:
-* In their primary form, they basically break all formal verifiability of programs in typed languages, due to the fact they are out of the type system. Checked exceptions are an attempt to solve that (notably in Java), but they end upm often being the worst of both worlds instead of the best. 
-* It's extremly difficult to deal with all possible failure modes in an exhaustive manner,
+- In their primary form, they basically break all formal verifiability of programs in typed languages, due to the fact they are out of the type system. Checked exceptions are an attempt to solve that (notably in Java), but they end upm often being the worst of both worlds instead of the best.
+- It's extremly difficult to deal with all possible failure modes in an exhaustive manner,
 since the exceptions are inherently hiding the error flow compared to a naive "return code as error"
 C-like approach. The fact that exceptions travel implicitly through the calls makes them very difficult if not impossible to integrate them in a verifiable system..
-* They need special mecanisms to handle them in asynchronous contexts. Remember, exceptions by definition do not allow delaying the error handling - while asynchronous code is all about delaying stuff. This introduces further complexity in code coloring, and prevents from dealing with the "good" and "bad" path in a symmetric way in asynchronous contexts. Also, if something like `asyncio` already bundles this type of mecanisms, for concurrent code based on thread this boilerpalte has to be written manually.<br><br>
+- They need special mecanisms to handle them in asynchronous contexts. Remember, exceptions by definition do not allow delaying the error handling - while asynchronous code is all about delaying stuff. This introduces further complexity in code coloring, and prevents from dealing with the "good" and "bad" path in a symmetric way in asynchronous contexts. Also, if something like `asyncio` already bundles this type of mecanisms, for concurrent code based on thread this boilerpalte has to be written manually.<br><br>
 
 In real-time, safety critical systems where reliability is extremly critical, exceptions are often counter-productive. Asserting code behaviour is crucial in these contexts,
 and exceptions are pretty bad for that, being too opaque. The whole "you don't need to know about errors if you can't deal with it" idea does not scale very well in safety critical systems. The whole concept of being potentially hit by an error coming from a depth-5 callee in the calls stack is also far from being an asset. Errors travelling implictly by more than one call in the stack in a completely opaque way is particularly bad in that context.
@@ -250,10 +267,12 @@ Exceptions simplify the business logic as long as the program won't kill anyone 
 There are reasons for which Rust is considered as one of the most powerful programming language for high-reliability application, and the error handling is one of them.
 
 ## So, should one refrain from using exceptions ?
+
 In a language like Python, definitely not. The idiomatic way to deal with errors in Python is to use exceptions - and going against what's idomatic is rarely a good idea.
 In the end, whether to use exceptions or error as values is basically a tradeoff between simplified control flow and verifiability. In the context of enteprise software for which Java was and still is extremly popular, errors are typically not life threatening and one might see why exceptions got so popular. In programming contexts where the most of the worload is put toward maximizing robustness and relibaility, they are sort of a footgun.
 
 ## Using both: exceptions as a soft panic
+
 The heart of the problem is that errors and exceptions are *not* supposed to be the same. Although some languages made idomatic to use exception for any type of error (Python included !), exceptions are supposed to be for... *exceptional* errors. <br>
 Although what should be considered *exceptional* is highly subjective, application-dependant and might evolve other time, there are for sure tons of errors out there that are definitely not exceptional. A user making a typo in a form for example is hardly something that should be deemed *exceptional*. Having this case encoded in the type system makes much easier to verify that the software handles every possible situation exhaustively. <br>
 On the other end, it's impossible to deal with every single possible error out there. Typically, a lot of programs would not consider the case of a failure when allocating a memory, even though any memory allocation is susceptible to failure (if memory is full, for example). First, because checking every single memory allocation quickly gets annoying, and also simply if your memory is full there are probably already so many things broken that your program not working is the least of the user's worries.
@@ -262,3 +281,4 @@ On the other end, it's impossible to deal with every single possible error out t
 # License
 
 `exhausterr` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+
