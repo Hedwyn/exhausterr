@@ -351,6 +351,17 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         return self.error
 
 
+def err[**P, E: Error](
+    error_factory: Callable[P, E], *args: P.args, **kwargs: P.kwargs
+) -> Err[E]:
+    """
+    Syntax sugar,
+    `err(MyError, arg1, arg2)` is semantically equivalent to
+    `Err(MyError(arg1, arg2))` (avoids extraneous parentheses)
+    """
+    return Err(error_factory(*args, **kwargs))
+
+
 # Note: in Python, any object is technially 'bool-like', as all objects
 # can be used by `if` or `bool`
 # While the logic using BoolLike would be technically perfectly correct

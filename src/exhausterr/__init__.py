@@ -12,10 +12,12 @@ from ._builtin import (
 )
 from ._errors import Error
 from ._iterators import chain_results, result_mapper, result_reducer, resultify
-from ._results import AbstractResult, Err, NoneOr, Ok, Result, is_error
+from ._results import AbstractResult, Err, NoneOr, Ok, Result, err, err_if, is_error
 
 __all__ = [
     "AbstractResult",
+    "err",
+    "err_if",
     "Result",
     "Ok",
     "Err",
