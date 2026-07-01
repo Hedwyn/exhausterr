@@ -6,20 +6,21 @@ Some convenience iteration and composition tools around Results.
 """
 
 from __future__ import annotations
+
 from typing import (
+    Any,
+    Callable,
     Iterable,
-    cast,
-    assert_never,
-    overload,
     Iterator,
     TypeVar,
-    Callable,
-    Any,
+    assert_never,
+    cast,
+    overload,
     reveal_type,
 )
 
-from ._results import Ok, Result, Err, NoneOr
 from ._errors import Error
+from ._results import Err, NoneOr, Ok, Result
 
 R = TypeVar("R")
 

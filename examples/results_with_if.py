@@ -1,5 +1,7 @@
-from exhausterr import Result, Error
 from typing import reveal_type
+
+from exhausterr import Error, Result
+
 
 def check_result(result: Result[int, Error]) -> None:
     """

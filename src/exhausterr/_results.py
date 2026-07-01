@@ -32,9 +32,9 @@ which is equivalent to `Result[None, YourErrorType]`.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from enum import Enum, auto
 from typing import (
-    Callable,
     ClassVar,
     Final,
     Generic,
@@ -257,13 +257,9 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     error: E
 
     @overload
-    def __init__(
-        self: Err[None], *, exception_cls: type[Exception] | None = None
-    ) -> None: ...
+    def __init__(self: Err[None], *, exception_cls: type[Exception] | None = None) -> None: ...
     @overload
-    def __init__(
-        self, error: E, *, exception_cls: type[Exception] | None = None
-    ) -> None: ...
+    def __init__(self, error: E, *, exception_cls: type[Exception] | None = None) -> None: ...
     def __init__(
         self,
         error: E = cast(E, None),
@@ -351,9 +347,7 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         return self.error
 
 
-def err[**P, E: Error](
-    error_factory: Callable[P, E], *args: P.args, **kwargs: P.kwargs
-) -> Err[E]:
+def err[**P, E: Error](error_factory: Callable[P, E], *args: P.args, **kwargs: P.kwargs) -> Err[E]:
     """
     Syntax sugar,
     `err(MyError, arg1, arg2)` is semantically equivalent to

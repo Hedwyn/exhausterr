@@ -9,10 +9,11 @@ from dataclasses import dataclass
 from typing import assert_never
 
 import pytest
-from exhausterr import AbstractResult, Result, Ok, Err
+from test_errors import BasicError
+
+from exhausterr import AbstractResult, Err, Ok, Result
 from exhausterr._errors import Error
 from exhausterr._results import BoolLike, err_if
-from test_errors import BasicError
 
 
 def fails_on_true(should_fail: bool) -> Result[bool, BasicError]:

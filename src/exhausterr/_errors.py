@@ -6,13 +6,14 @@ Base layer for error types.
 """
 
 from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field, is_dataclass
+from functools import cached_property
 from typing import (
-    NoReturn,
     Any,
     ClassVar,
+    NoReturn,
 )
-from functools import cached_property
-from dataclasses import is_dataclass, dataclass, field, asdict
 
 
 @dataclass
@@ -39,9 +40,7 @@ class Error:
 
     description: ClassVar[str | None] = None
     exception_cls: ClassVar[type[Exception]] = Exception
-    _notes: list[str] = field(
-        init=False, compare=False, hash=False, default_factory=list
-    )
+    _notes: list[str] = field(init=False, compare=False, hash=False, default_factory=list)
 
     @cached_property
     def _is_dataclass(self) -> bool:

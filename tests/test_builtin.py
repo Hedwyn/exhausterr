@@ -6,18 +6,21 @@ Test suite for the error wrappers on as alternative to builtin primitives.
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 import pytest
+
 from exhausterr import (
-    Ok,
+    BadAttribute,
+    BadKey,
     Err,
-    safe_int_divide,
+    Ok,
+    ZeroDivision,
     safe_divide,
     safe_getattr,
     safe_getitem,
-    ZeroDivision,
-    BadKey,
-    BadAttribute,
+    safe_int_divide,
 )
 
 

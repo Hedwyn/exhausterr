@@ -13,10 +13,12 @@ that keyword in the Error class names.
 """
 
 from __future__ import annotations
-from typing import ClassVar, Final, Mapping
+
 from dataclasses import dataclass
-from ._results import Result, Ok, Err
+from typing import ClassVar, Final, Mapping
+
 from ._errors import Error
+from ._results import Err, Ok, Result
 
 _NO_DEFAULT: Final[object] = object()
 

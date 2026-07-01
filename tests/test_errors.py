@@ -5,9 +5,11 @@ Test suite for error module.
 @author: Baptiste Pestourie
 """
 
-from typing import TypedDict, NotRequired
 from dataclasses import dataclass
+from typing import NotRequired, TypedDict
+
 import pytest
+
 from exhausterr import Error
 from exhausterr.type_utils import order_typed_dict_keys
 

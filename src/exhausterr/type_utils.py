@@ -5,8 +5,8 @@ Type definitions for better type annotations.
 @author: Baptiste Pestourie
 """
 
-from typing import Protocol, Iterator
 import itertools
+from typing import Iterator, Protocol
 
 
 class TypedDictDefinition(Protocol):
@@ -40,11 +40,7 @@ def order_typed_dict_keys(typed_dict: TypedDictDefinition) -> Iterator[str]:
     optional_keys_ordered: list[str] = []
 
     for annotation in typed_dict.__annotations__.keys():
-        container = (
-            required_keys_ordered
-            if annotation in required_keys
-            else optional_keys_ordered
-        )
+        container = required_keys_ordered if annotation in required_keys else optional_keys_ordered
         container.append(annotation)
 
     return itertools.chain(required_keys_ordered, optional_keys_ordered)

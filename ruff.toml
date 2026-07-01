@@ -1,0 +1,51 @@
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = ["ALL"]
+ignore = [
+  # "C408",  # "Unnecessary" `dict`, `list` or `tuple` calls instead of literals
+  "Q",       # Quotes
+  "SLF001",  # Access private _member
+  "RET505",  # Else after return
+  "ARG002",  # Unused method argument
+  "PLW0603", # Global statement to update variable
+  "PLR0913", # Too many arguments
+  "PLR2004", # Magic value used in comparison
+  "ISC001",  # Implicit string concatenation (redundant)
+  "D",       # Temporarily: docstrings
+  "ERA001",  # Temporarily: commented out code
+  "S101",    # Use of assert
+  # Getting rid of useless complaints about TODO statements...
+  "TD002",
+  "FIX002",
+  "TD003",
+  "N818",
+  "EM101",
+  "EM102",
+  "TRY003",
+]
+
+[lint.per-file-ignores]
+"tests/*" = [
+  "D",    # Docstrings
+  "S101", # Use of assert
+]
+
+[lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+# [lint.pydocstyle]
+# convention = "google"
+
+[lint.mccabe]
+max-complexity = 15
+
+[lint.flake8-annotations]
+allow-star-arg-any = true
+
+[lint.flake8-builtins]
+builtins-ignorelist = ["help"]
+
+[format]
+skip-magic-trailing-comma = false
