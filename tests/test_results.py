@@ -5,10 +5,13 @@ Test suite for results objects.
 @author: Baptiste Pestourie
 """
 
+from dataclasses import dataclass
 from typing import assert_never
 
 import pytest
 from exhausterr import AbstractResult, Result, Ok, Err
+from exhausterr._errors import Error
+from exhausterr._results import BoolLike, err_if
 from test_errors import BasicError
 
 
@@ -84,3 +87,30 @@ def test_result_repr_evals() -> None:
     a_string_error = Err("some error")
     assert eval(repr(an_ok_int)) == an_ok_int
     assert eval(repr(a_string_error)) == a_string_error
+
+
+@dataclass
+class DummyError(Error):
+    a: int
+    b: float = 0.0
+
+
+@pytest.mark.parametrize(
+    ["condition"],
+    [
+        (True,),
+        (False,),
+        ([],),
+        ([1],),
+    ],
+)
+def test_err_if(condition: BoolLike) -> None:
+    match err_if(condition, DummyError, 42, 3.14):
+        case Ok(value=value):
+            assert not condition
+            assert value is None
+        case Err(error=error):
+            assert condition
+            assert isinstance(error, DummyError)
+            assert error.a == 42
+            assert error.b == 3.14

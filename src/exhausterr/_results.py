@@ -34,12 +34,14 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from typing import (
+    Callable,
     ClassVar,
     Final,
     Generic,
     Literal,
     NoReturn,
     Optional,
+    Protocol,
     Self,
     TypeGuard,
     TypeVar,
@@ -347,6 +349,68 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         regardless of whether it is an `Ok` or an `Err`.
         """
         return self.error
+
+
+# Note: in Python, any object is technially 'bool-like', as all objects
+# can be used by `if` or `bool`
+# While the logic using BoolLike would be technically perfectly correct
+# type-wise by simply using `object`, it is rather error-prone,
+# and the general philosophy it to prefer explicitness.
+# The definition below should capture the 'idomatic' expectations
+# for boolean object - that is objects with __bool__ or __len -
+# while excluding the fallback behaviour used by Python of
+# 'any object without __bool__ or __len is True
+type BoolLike = _HasBool | _HasLen
+
+
+class _HasBool(Protocol):
+    def __bool__(self) -> bool: ...
+
+
+class _HasLen(Protocol):
+    def __len__(self) -> int: ...
+
+
+class Truthy(Protocol):
+    def __bool__(self) -> Literal[True]: ...
+
+
+class Falsy(Protocol):
+    def __bool__(self) -> Literal[False]: ...
+
+
+@overload
+def err_if[**P, E: Error](
+    condition: Truthy | Literal[True],
+    error_factory: Callable[P, E],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> Err[E]: ...
+@overload
+def err_if[**P, E: Error](
+    condition: Falsy,
+    error_factory: Callable[P, E],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> Ok[None]: ...
+@overload
+def err_if[**P, E: Error](
+    condition: BoolLike,
+    error_factory: Callable[P, E],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> Ok[None] | Err[E]: ...
+
+
+def err_if[**P, E: Error](
+    condition: BoolLike,
+    error_factory: Callable[P, E],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> Ok[None] | Err[E]:
+    if condition:
+        return Err(error_factory(*args, **kwargs))
+    return Ok()
 
 
 # --- Result type hints --- #

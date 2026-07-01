@@ -7,7 +7,7 @@ name = "exhausterr"
 dynamic = ["version"]
 description = "Exhaustive error handling for Python"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
 keywords = []
 authors = [{ name = "Hedwyn", email = "bpestourie@gmail.com" }]
