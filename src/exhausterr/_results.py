@@ -40,11 +40,12 @@ from typing import (
     Literal,
     NoReturn,
     Optional,
+    Self,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
-    Self,
-    TypeGuard,
+    overload,
 )
 
 from ._errors import Error
@@ -161,6 +162,10 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
     __match_args__: ClassVar[tuple[str, ...]] = ("value",)
     value: R
 
+    @overload
+    def __init__(self: Ok[None]) -> None: ...
+    @overload
+    def __init__(self, value: R) -> None: ...
     def __init__(self, value: R = cast(R, None)) -> None:
         """
         Parameters
@@ -249,6 +254,14 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     __match_args__: ClassVar[tuple[str, ...]] = ("error",)
     error: E
 
+    @overload
+    def __init__(
+        self: Err[None], *, exception_cls: type[Exception] | None = None
+    ) -> None: ...
+    @overload
+    def __init__(
+        self, error: E, *, exception_cls: type[Exception] | None = None
+    ) -> None: ...
     def __init__(
         self,
         error: E = cast(E, None),
