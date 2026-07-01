@@ -40,7 +40,6 @@ from typing import (
     Generic,
     Literal,
     NoReturn,
-    Optional,
     Protocol,
     Self,
     TypeGuard,
@@ -56,8 +55,8 @@ V = TypeVar("V")
 
 
 # -- Type Variables --- #
-R = TypeVar("R", bound=Optional[object], covariant=True)
-E = TypeVar("E", bound=Optional[object], covariant=True)
+R = TypeVar("R", bound=object | None, covariant=True)  # noqa: PLC0105
+E = TypeVar("E", bound=object | None, covariant=True)  # noqa: PLC0105
 
 
 class ExhausterrSentinel(Enum):
@@ -75,7 +74,7 @@ NotsetT = Literal[ExhausterrSentinel.NOTSET]
 _NOTSET: Final = ExhausterrSentinel.NOTSET
 
 
-class AbstractResult(Generic[R, E]):
+class AbstractResult(Generic[R, E]):  # noqa: UP046
     """
     Base class for result objects Ok and Err.
     Abstract-ness is not enforced, you should however instanciate
@@ -89,7 +88,7 @@ class AbstractResult(Generic[R, E]):
     rather than AbstractResult.
     """
 
-    __slots__ = ("value", "error")
+    __slots__ = ("error", "value")
     value: R
     error: E
 
@@ -168,15 +167,21 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
     def __init__(self: Ok[None]) -> None: ...
     @overload
     def __init__(self, value: R) -> None: ...
-    def __init__(self, value: R = cast(R, None)) -> None:
+    def __init__(self, value: R | None = None) -> None:
         """
         Parameters
         ----------
         value: R
             The returned value
         """
-        self.value = value
+        self.value = cast("R", value)
         self.error = _NOTSET
+
+    def __hash__(self) -> int:
+        """
+        Fallsback to the inner value's hash.
+        """
+        return hash(self.value)
 
     def __repr__(self) -> str:
         """
@@ -246,12 +251,12 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
         return self.value
 
 
-class Err(AbstractResult[NotsetT, E], Generic[E]):
+class Err(AbstractResult[NotsetT, E], Generic[E]):  # noqa: UP046
     """
     An error result.
     """
 
-    __slots__ = AbstractResult.__slots__ + ("_exception_cls",)
+    __slots__ = (*AbstractResult.__slots__, "_exception_cls")
 
     __match_args__: ClassVar[tuple[str, ...]] = ("error",)
     error: E
@@ -262,7 +267,7 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
     def __init__(self, error: E, *, exception_cls: type[Exception] | None = None) -> None: ...
     def __init__(
         self,
-        error: E = cast(E, None),
+        error: E | None = None,
         *,
         exception_cls: type[Exception] | None = None,
     ) -> None:
@@ -272,9 +277,15 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         value: R
             The returned error
         """
-        self.error = error
+        self.error = cast("E", error)
         self.value = _NOTSET
         self._exception_cls = exception_cls
+
+    def __hash__(self) -> int:
+        """
+        Fallsback to the inner error's hash.
+        """
+        return hash(self.error)
 
     def __repr__(self) -> str:
         """
@@ -311,7 +322,7 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         err = self.error
         if isinstance(err, Error):
             err.throw()
-        raise Exception(err)
+        raise Exception(err)  # noqa: TRY002
 
     def unwrap_or_none(self) -> None:
         """
@@ -320,7 +331,7 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):
         None
             Always None
         """
-        return None
+        return None  # noqa: RET501
 
     def unwrap_or_self(self) -> Self:
         """
@@ -419,5 +430,5 @@ def err_if[**P, E: Error](
 
 
 # --- Result type hints --- #
-Result = Union[Ok[R], Err[E]]
-NoneOr = Union[Ok[None], Err[E]]
+Result = Ok[R] | Err[E]
+NoneOr = Ok[None] | Err[E]
