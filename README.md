@@ -18,7 +18,7 @@ Documentation for exhausterr can be accessed [here](https://hedwyn.github.io/exh
 
 # Installation
 
-Requires Python>=3.11. Based on hatchling as the build backend.
+Requires Python>=3.12. Based on hatchling as the build backend.
 
 ```console
 pip install exhausterr
