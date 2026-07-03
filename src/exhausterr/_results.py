@@ -39,12 +39,12 @@ from typing import (
     Final,
     Generic,
     Literal,
-    NamedTuple,
     NoReturn,
     Protocol,
     Self,
     TypeGuard,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -74,7 +74,7 @@ NotsetT = Literal[ExhausterrSentinel.NOTSET]
 _NOTSET: Final = ExhausterrSentinel.NOTSET
 
 
-class AbstractResult(NamedTuple, Generic[R, E]):  # noqa: UP046
+class AbstractResult(Generic[R, E]):  # noqa: UP046
     """
     Base class for result objects Ok and Err.
     Abstract-ness is not enforced, you should however instanciate
@@ -84,13 +84,11 @@ class AbstractResult(NamedTuple, Generic[R, E]):  # noqa: UP046
         * Allow building custom classes
         * Use with isinstance() checks.
 
-    Being a NamedTuple, results can be unpacked Go-style:
-    >>> value, error = my_result
-
     For type hinting, use Result for Ok() and Err() objects
     rather than AbstractResult.
     """
 
+    __slots__ = ("error", "value")
     value: R
     error: E
 
@@ -112,7 +110,7 @@ class AbstractResult(NamedTuple, Generic[R, E]):  # noqa: UP046
         """
         raise RuntimeError(
             "This result object is empty and has never been set."
-            "You should not call AbstractResult directly",
+            "You should not call AbstractResult directly"
         )
 
     def unwrap_or_none(self) -> R | None:
@@ -122,7 +120,7 @@ class AbstractResult(NamedTuple, Generic[R, E]):  # noqa: UP046
         """
         raise RuntimeError(
             "This result object is empty and has never been set."
-            "You should not call AbstractResult directly",
+            "You should not call AbstractResult directly"
         )
 
     def unwrap_or_self(self) -> R | Self:
@@ -139,7 +137,7 @@ class AbstractResult(NamedTuple, Generic[R, E]):  # noqa: UP046
         """
         raise RuntimeError(
             "This result object is empty and has never been set."
-            "You should not call AbstractResult directly",
+            "You should not call AbstractResult directly"
         )
 
 
@@ -163,19 +161,21 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
     """
 
     __match_args__: ClassVar[tuple[str, ...]] = ("value",)
+    value: R
 
     @overload
-    def __new__(cls) -> Ok[None]: ...  # type: ignore[misc]  # mypy limitation: overloaded __new__ on a NamedTuple subclass
+    def __init__(self: Ok[None]) -> None: ...
     @overload
-    def __new__(cls, value: R) -> Ok[R]: ...
-    def __new__(cls, value: R | None = None) -> Self:
+    def __init__(self, value: R) -> None: ...
+    def __init__(self, value: R | None = None) -> None:
         """
         Parameters
         ----------
         value: R
             The returned value
         """
-        return tuple.__new__(cls, (cast("R", value), _NOTSET))
+        self.value = cast("R", value)
+        self.error = _NOTSET
 
     def __hash__(self) -> int:
         """
@@ -256,29 +256,30 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):  # noqa: UP046
     An error result.
     """
 
-    __match_args__: ClassVar[tuple[str, ...]] = ("error",)
-    _exception_cls: type[Exception] | None
+    __slots__ = (*AbstractResult.__slots__, "_exception_cls")
 
-    # mypy limitation: overloaded __new__ on a NamedTuple subclass
+    __match_args__: ClassVar[tuple[str, ...]] = ("error",)
+    error: E
+
     @overload
-    def __new__(cls, *, exception_cls: type[Exception] | None = None) -> Err[None]: ...  # type: ignore[misc]
+    def __init__(self: Err[None], *, exception_cls: type[Exception] | None = None) -> None: ...
     @overload
-    def __new__(cls, error: E, *, exception_cls: type[Exception] | None = None) -> Err[E]: ...
-    def __new__(
-        cls,
+    def __init__(self, error: E, *, exception_cls: type[Exception] | None = None) -> None: ...
+    def __init__(
+        self,
         error: E | None = None,
         *,
         exception_cls: type[Exception] | None = None,
-    ) -> Self:
+    ) -> None:
         """
         Parameters
         ----------
         value: R
             The returned error
         """
-        self = tuple.__new__(cls, (_NOTSET, cast("E", error)))
+        self.error = cast("E", error)
+        self.value = _NOTSET
         self._exception_cls = exception_cls
-        return self
 
     def __hash__(self) -> int:
         """
