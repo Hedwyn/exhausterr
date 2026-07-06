@@ -7,7 +7,7 @@ Base layer for error types.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass
 from functools import cached_property
 from typing import (
     Any,
@@ -60,7 +60,7 @@ class Error:
         dict[str, Any]
             Dict containing the arguments and their current values
         """
-        return {name: value for name, value in asdict(self).items() if name[0] != "_"}
+        return {f.name: getattr(self, f.name) for f in fields(self) if f.name[0] != "_"}
 
     def add_notes(self, *notes: str) -> None:
         """
