@@ -208,6 +208,13 @@ class Ok(AbstractResult[R, NotsetT], Generic[R]):
             return NotImplemented
         return other.error is _NOTSET and self.value == other.value
 
+    def splat(self) -> tuple[R, None]:
+        """
+        Go-style unpacking of a Result object:
+        >> ret, err = result.splat()
+        """
+        return self.value, None
+
     def unwrap(self) -> R:
         """
         Returns
@@ -311,6 +318,13 @@ class Err(AbstractResult[NotsetT, E], Generic[E]):  # noqa: UP046
             True otherwise
         """
         return False
+
+    def splat(self) -> tuple[None, E]:
+        """
+        Go-style unpacking of a Result object:
+        >> ret, err = result.splat()
+        """
+        return None, self.error
 
     def unwrap(self) -> NoReturn:
         """
